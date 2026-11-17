@@ -95,8 +95,29 @@ Para sa Play Store, gumawa ng sariling signing key at gamitin ang
 | `LIVE_IDLE_MS` | `600000` | Isasara ang Live kapag 10 min walang galaw |
 | `PUPPETEER_EXECUTABLE_PATH` | — | Sariling Chrome/Chromium |
 | `USE_NPM_PUPPETEER` | — | `1` = laging gamitin ang npm package |
+| `LOW_MEMORY` | — | `1` = tipid na Chrome settings para sa maliit na cloud plan |
+| `BROWSER_IDLE_MS` | `0` (`120000` kapag LOW_MEMORY) | Isasara ang Chrome kapag walang gumagamit |
+| `PUBLIC_URL` | — | Public address na ipapakita sa logs (awtomatiko sa Render/Railway) |
 
 Halimbawa: `APP_TOKEN=akingSikreto PORT=8080 npm start`
+
+## ☁️ Sa Cloud gamit lang ang Cellphone (Render, libre)
+
+Hindi kailangan ng computer. Nasa root ng repo ang `render.yaml`, kaya halos
+isang pindot lang ang pag-deploy.
+
+1. Sa browser ng phone, buksan ang **render.com** → **Get Started** → **Sign up with GitHub**.
+2. Sa Dashboard: **New +** → **Blueprint**.
+3. Piliin ang repo na **puppeteerV9** (kung wala, pindutin ang *Configure GitHub* at bigyan ng access ang Render).
+   Piliin ang branch kung saan nandoon ang `render.yaml`.
+4. Hihingin nito ang **APP_TOKEN**. Mag-type ng sarili mong password (hal. `akingSikreto2026`). **Tandaan ito.**
+5. Pindutin ang **Apply** / **Deploy Blueprint**. Maghintay ng mga 5–10 minuto hanggang **Live** na ang status.
+6. Kopyahin ang address sa itaas (hal. `https://puppeteer-mobile-abcd.onrender.com`).
+7. Sa app: ilagay ang address sa **unang kahon** at ang password sa **Access token**, tapos pindutin ang **Connect**.
+
+Mga dapat malaman sa libreng plan:
+- **Natutulog ito** kapag 15 minutong walang gumagamit. Sa unang bukas ulit, maghintay ng mga 1 minuto.
+- **512 MB lang ang memory.** Naka-on ang `LOW_MEMORY` mode at isang task lang ang sabay. Ang mabibigat na website ay puwedeng mag-crash. Kung madalas, mag-upgrade ng plan sa Render (Settings → Instance Type).
 
 ## ☁️ Para magamit kahit saan (hindi lang sa bahay)
 

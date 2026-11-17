@@ -4,7 +4,7 @@
  * The server streams JPEG frames (CDP Page.startScreencast) to the phone and
  * replays taps, scrolls and keystrokes from the phone into the page.
  */
-import {applyDevice, getBrowser} from './browser.js';
+import {applyDevice, browserInUse, browserReleased, getBrowser} from './browser.js';
 import {normalizeUrl} from './actions.js';
 
 const IDLE_MS = Number(process.env.LIVE_IDLE_MS || 10 * 60_000);
@@ -18,6 +18,7 @@ export function handleLiveConnection(ws) {
     return;
   }
   liveCount++;
+  browserInUse();
 
   let context;
   let page;
@@ -185,6 +186,7 @@ export function handleLiveConnection(ws) {
     clearTimeout(idleTimer);
     await cdp?.send('Page.stopScreencast').catch(() => {});
     await context?.close().catch(() => {});
+    browserReleased();
   });
 
   resetIdle();

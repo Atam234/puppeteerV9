@@ -63,6 +63,38 @@ export async function applyDevice(page, deviceId = 'desktop') {
   return device.viewport;
 }
 
+// LOW_MEMORY=1 is meant for small cloud plans (e.g. 512 MB on Render free).
+const LOW_MEMORY = process.env.LOW_MEMORY === '1';
+const LOW_MEMORY_ARGS = [
+  '--renderer-process-limit=1',
+  '--disable-extensions',
+  '--disable-background-networking',
+  '--disable-component-update',
+  '--disable-features=Translate,OptimizationHints,MediaRouter',
+  '--js-flags=--max-old-space-size=192',
+];
+// Close the shared browser after a quiet period to give memory back.
+const BROWSER_IDLE_MS = Number(process.env.BROWSER_IDLE_MS || (LOW_MEMORY ? 120_000 : 0));
+let idleTimer;
+let activeUsers = 0;
+
+export function browserInUse() {
+  activeUsers++;
+  clearTimeout(idleTimer);
+}
+
+export function browserReleased() {
+  activeUsers = Math.max(0, activeUsers - 1);
+  if (BROWSER_IDLE_MS > 0 && activeUsers === 0) {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => {
+      if (activeUsers === 0) {
+        void closeBrowser();
+      }
+    }, BROWSER_IDLE_MS);
+  }
+}
+
 let browserPromise;
 
 export async function getBrowser() {
@@ -83,6 +115,7 @@ export async function getBrowser() {
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
+        ...(LOW_MEMORY ? LOW_MEMORY_ARGS : []),
       ],
     });
     browser.on('disconnected', () => {
@@ -127,9 +160,11 @@ function release() {
  */
 export async function withPage(options, fn) {
   await acquire();
-  const browser = await getBrowser();
-  const context = await browser.createBrowserContext();
+  browserInUse();
+  let context;
   try {
+    const browser = await getBrowser();
+    context = await browser.createBrowserContext();
     const page = await context.newPage();
     page.setDefaultTimeout(Number(options.timeout || 30_000));
     page.setDefaultNavigationTimeout(Number(options.timeout || 30_000));
@@ -141,7 +176,8 @@ export async function withPage(options, fn) {
     }
     return await fn(page);
   } finally {
-    await context.close().catch(() => {});
+    await context?.close().catch(() => {});
+    browserReleased();
     release();
   }
 }

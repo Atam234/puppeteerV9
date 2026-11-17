@@ -184,8 +184,15 @@ server.listen(PORT, HOST, async () => {
   console.log('\n  📱 Puppeteer Mobile is running');
   console.log(`  Puppeteer: ${puppeteerSource}\n`);
   console.log(`  This computer:  http://localhost:${PORT}${q}`);
-  for (const a of addrs) {
-    console.log(`  On your phone:  http://${a}:${PORT}${q}`);
+  // Cloud hosts (Render, Railway, ...) expose a public HTTPS address.
+  const publicUrl = process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL ||
+    (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : '');
+  if (publicUrl) {
+    console.log(`  Public link:    ${publicUrl.replace(/\/+$/, '')}${q}`);
+  } else {
+    for (const a of addrs) {
+      console.log(`  On your phone:  http://${a}:${PORT}${q}`);
+    }
   }
   if (AUTH_ENABLED && !process.env.APP_TOKEN) {
     console.log('\n  Tip: set APP_TOKEN=yourSecret to keep the same token between restarts.');

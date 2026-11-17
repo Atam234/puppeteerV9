@@ -1,0 +1,24 @@
+# One-tap cloud deploy of Puppeteer Mobile on Render (https://render.com).
+# Render reads this file when you choose "New → Blueprint" for this repo.
+services:
+  - type: web
+    name: puppeteer-mobile
+    runtime: docker
+    plan: free
+    rootDir: mobile-app
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      # Your own password for the app. Render asks you to type it in.
+      - key: APP_TOKEN
+        sync: false
+      # The free plan has 512 MB of memory: keep one browser task at a time.
+      - key: MAX_JOBS
+        value: "1"
+      - key: MAX_LIVE_SESSIONS
+        value: "1"
+      # Lighter Chrome settings + close the browser when nobody uses it.
+      - key: LOW_MEMORY
+        value: "1"
