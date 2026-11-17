@@ -33,6 +33,10 @@ Alternatively, you can configure your package manager to allow the install scrip
 
 :::
 
+## Mobile app
+
+Gusto mo bang gamitin sa phone? Tingnan ang [`mobile-app/`](mobile-app/README.md) — isang installable app para sa live browsing, screenshots, PDF, data extraction, automation at page inspection.
+
 ## MCP
 
 Install [`chrome-devtools-mcp`](https://github.com/ChromeDevTools/chrome-devtools-mcp),

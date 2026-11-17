@@ -38,6 +38,7 @@ function getThirdPartyPackages() {
 
 export default defineConfig([
   globalIgnores([
+    '**/mobile-app/',
     '**/node_modules',
     '**/build/',
     '**/lib/**/*',
