@@ -32,9 +32,9 @@ const store = {
 /* ------------------------------------------------------------------ */
 const STRINGS = {
   fil: {
-    loginHelp: 'Ilagay ang access token na makikita sa terminal kung saan mo pinatakbo ang server.',
+    loginHelp: 'Ikonekta sa Puppeteer Mobile server mo. I-paste ang buong link mula sa terminal (may ?token=…), o ilagay ang address at token.',
     tokenPh: 'Access token',
-    login: 'Pumasok',
+    login: 'Kumonekta',
     liveEmpty: 'Mag-type ng website sa itaas at pindutin ang Go para magbukas ng totoong browser.',
     liveStart: 'Simulan ang browser',
     type: 'Mag-type',
@@ -85,13 +85,15 @@ const STRINGS = {
     invalidToken: 'Mali ang token. Subukan ulit.',
     offline: 'Hindi maabot ang server. Naka-on ba ito?',
     jsPrompt: 'JavaScript na tatakbo sa page (gamitin ang return):',
+    needServer: 'Ilagay ang server address (hal. 192.168.1.5:3000).',
+    serverHelp: 'I-paste ang buong link mula sa terminal (may ?token=…) o ilagay ang address at token.',
     connLost: 'Naputol ang koneksyon sa live browser.',
     confirmClear: 'Burahin lahat ng history at saved flows?',
   },
   en: {
-    loginHelp: 'Enter the access token shown in the terminal where you started the server.',
+    loginHelp: 'Connect to your Puppeteer Mobile server. Paste the full link from the terminal (with ?token=…), or enter the address and token.',
     tokenPh: 'Access token',
-    login: 'Sign in',
+    login: 'Connect',
     liveEmpty: 'Type a website above and press Go to open a real browser.',
     liveStart: 'Start browser',
     type: 'Type',
@@ -142,6 +144,8 @@ const STRINGS = {
     invalidToken: 'Wrong token. Try again.',
     offline: 'Cannot reach the server. Is it running?',
     jsPrompt: 'JavaScript to run in the page (use return):',
+    needServer: 'Enter the server address (e.g. 192.168.1.5:3000).',
+    serverHelp: 'Paste the full link from the terminal (with ?token=…) or enter the address and token.',
     connLost: 'Lost connection to the live browser.',
     confirmClear: 'Delete all history and saved flows?',
   },
@@ -174,6 +178,25 @@ applyTheme();
 /* ------------------------------------------------------------------ */
 /* API                                                                 */
 /* ------------------------------------------------------------------ */
+// Inside the Android app (Capacitor) the UI is bundled, so the server lives
+// at a user-provided address instead of the page's own origin.
+const NATIVE = !!window.Capacitor?.isNativePlatform?.();
+let serverUrl = store.get('server', NATIVE ? '' : location.origin);
+const apiBase = () => serverUrl.replace(/\/+$/, '');
+
+/** Accepts "192.168.1.5:3000", "http://host:3000/?token=abc", etc. */
+function parseServerLink(input) {
+  let value = String(input || '').trim();
+  if (!value) return {};
+  if (!/^https?:\/\//i.test(value)) value = 'http://' + value;
+  try {
+    const u = new URL(value);
+    return {server: u.origin, token: u.searchParams.get('token') || ''};
+  } catch {
+    return {};
+  }
+}
+
 let token = store.get('token', '');
 {
   const params = new URLSearchParams(location.search);
@@ -195,7 +218,7 @@ class ApiError extends Error {
 async function api(path, body, {raw = false} = {}) {
   let res;
   try {
-    res = await fetch('/api/' + path, {
+    res = await fetch(apiBase() + '/api/' + path, {
       method: body ? 'POST' : 'GET',
       headers: {
         Authorization: 'Bearer ' + token,
@@ -269,7 +292,35 @@ function errorCard(container, err) {
   container.replaceChildren(h('div', {class: 'card error-card'}, '⚠️ ' + err.message));
 }
 
-function downloadBlob(blob, name) {
+const blobToBase64 = blob =>
+  new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(',')[1]);
+    r.onerror = reject;
+    r.readAsDataURL(blob);
+  });
+
+async function nativeWrite(blob, name, directory) {
+  const res = await window.Capacitor.nativePromise('Filesystem', 'writeFile', {
+    path: 'Puppeteer/' + name,
+    data: await blobToBase64(blob),
+    directory,
+    recursive: true,
+  });
+  return res.uri;
+}
+
+async function downloadBlob(blob, name) {
+  if (NATIVE) {
+    try {
+      await nativeWrite(blob, name, 'DOCUMENTS');
+      toast('✅ Documents/Puppeteer/' + name, 'info', 4500);
+    } catch {
+      // Older Android versions may block Documents; fall back to sharing.
+      await shareBlob(blob, name);
+    }
+    return;
+  }
   const url = URL.createObjectURL(blob);
   const a = h('a', {href: url, download: name});
   document.body.append(a);
@@ -279,6 +330,15 @@ function downloadBlob(blob, name) {
 }
 
 async function shareBlob(blob, name) {
+  if (NATIVE) {
+    try {
+      const uri = await nativeWrite(blob, name, 'CACHE');
+      await window.Capacitor.nativePromise('Share', 'share', {title: name, files: [uri]});
+    } catch (err) {
+      if (!/cancel/i.test(err?.message || '')) toast(err?.message || 'Share failed', 'error');
+    }
+    return;
+  }
   const file = new File([blob], name, {type: blob.type});
   if (navigator.canShare?.({files: [file]})) {
     try {
@@ -333,7 +393,7 @@ function refreshUrlSuggestions() {
   if (!dl) {
     dl = h('datalist', {id: 'url-suggestions'});
     document.body.append(dl);
-    $$('input[type=url]').forEach(i => i.setAttribute('list', 'url-suggestions'));
+    $$('input[inputmode=url]').forEach(i => i.setAttribute('list', 'url-suggestions'));
   }
   const urls = [...new Set(store.get('history', []).map(x => x.url))].slice(0, 15);
   dl.replaceChildren(...urls.map(u => h('option', {value: u})));
@@ -417,18 +477,31 @@ function showLogin(message = '') {
   $('#app').hidden = true;
   $('#login').hidden = false;
   $('#login-error').textContent = message;
-  $('#login-token').focus();
+  $('#login-server').value = serverUrl;
+  $('#login-token').value = token;
+  (serverUrl ? $('#login-token') : $('#login-server')).focus();
 }
 
 $('#login-form').addEventListener('submit', async e => {
   e.preventDefault();
-  token = $('#login-token').value.trim();
+  const link = parseServerLink($('#login-server').value);
+  if (!link.server) {
+    $('#login-error').textContent = t('needServer');
+    return;
+  }
+  serverUrl = link.server;
+  token = $('#login-token').value.trim() || link.token;
+  store.set('server', serverUrl);
   store.set('token', token);
   await boot();
 });
 
 async function boot() {
   applyI18n();
+  if (!serverUrl) {
+    showLogin();
+    return;
+  }
   try {
     serverInfo = await api('info');
   } catch (err) {
@@ -495,7 +568,7 @@ $('#capture-form').addEventListener('submit', async e => {
             {class: 'result-actions'},
             h('button', {class: 'btn primary', onclick: () => downloadBlob(blob, name)}, '⬇ ' + t('download')),
             h('button', {class: 'btn ghost', onclick: () => shareBlob(blob, name)}, '↗ ' + t('share')),
-            h('a', {class: 'btn ghost', href: url, target: '_blank', rel: 'noopener'}, t('open')),
+            NATIVE ? null : h('a', {class: 'btn ghost', href: url, target: '_blank', rel: 'noopener'}, t('open')),
           ),
         ),
       );
@@ -926,8 +999,7 @@ function liveConnect(url) {
     if (url) liveSend({type: 'navigate', url});
     return;
   }
-  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  ws = new WebSocket(`${proto}://${location.host}/live?token=${encodeURIComponent(token)}`);
+  ws = new WebSocket(`${apiBase().replace(/^http/, 'ws')}/live?token=${encodeURIComponent(token)}`);
   $('#live-loading').hidden = false;
   $('#live-empty').hidden = true;
   ws.onopen = () => liveSend({type: 'start', url, device: $('#live-device').value});
@@ -1084,7 +1156,7 @@ $('#btn-settings').addEventListener('click', () => {
   $('#set-theme', wrap).value = settings.theme;
   $('#set-timeout', wrap).value = settings.timeout;
   $('#set-wait', wrap).value = settings.waitUntil;
-  $('#set-info', wrap).textContent = `Engine: ${serverInfo.puppeteer || '?'} · Jobs: ${serverInfo.jobs?.running ?? 0}/${serverInfo.jobs?.maxJobs ?? '?'}`;
+  $('#set-info', wrap).textContent = `Server: ${serverUrl} · Engine: ${serverInfo.puppeteer || '?'} · Jobs: ${serverInfo.jobs?.running ?? 0}/${serverInfo.jobs?.maxJobs ?? '?'}`;
   const save = () => store.set('settings', settings);
   $('#set-lang', wrap).addEventListener('change', e => {
     lang = e.target.value;
@@ -1126,7 +1198,7 @@ $('#btn-settings').addEventListener('click', () => {
 /* ------------------------------------------------------------------ */
 /* PWA                                                                 */
 /* ------------------------------------------------------------------ */
-if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator && !NATIVE) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
 }
 

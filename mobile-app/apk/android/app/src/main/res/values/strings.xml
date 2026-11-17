@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Puppeteer Mobile</string>
+    <string name="title_activity_main">Puppeteer Mobile</string>
+    <string name="package_name">com.puppeteer.mobile</string>
+    <string name="custom_url_scheme">com.puppeteer.mobile</string>
+</resources>

@@ -50,6 +50,39 @@ awtomatikong gagamitin ng app ang **local build** sa `packages/puppeteer`.
 Kung wala pa, ang npm package na `puppeteer` ang gagamitin. Makikita kung alin
 sa terminal at sa ⚙️ Settings ng app.
 
+## 🤖 Android App (APK)
+
+May totoong Android app na: **[`apk/PuppeteerMobile.apk`](apk/PuppeteerMobile.apk)**.
+
+1. I-download ang APK sa phone mo at buksan. Kung magtanong ang Android,
+   payagan ang *Install unknown apps* para sa browser o Files app mo.
+2. Patakbuhin ang server sa computer (`npm start`, tingnan sa itaas).
+3. Buksan ang app. I-paste ang buong link na **"On your phone"** mula sa
+   terminal (hal. `http://192.168.1.5:3000/?token=AbC123`) at pindutin ang **Kumonekta**.
+
+Ang screenshots at PDF na ida-download ay mapupunta sa **Documents/Puppeteer/**.
+Puwede ring i-share diretso sa Gallery, Drive, Messenger, atbp.
+
+> Kailangan pa rin ang server: hindi kayang patakbuhin ng phone mismo ang
+> Chrome at Puppeteer. Ang app ang nagsisilbing remote control.
+
+### Pag-build ng APK
+
+Kailangan: Node.js 22, Java 21, at Android SDK (platform 36).
+
+```bash
+cd mobile-app/apk
+npm install
+npm run build:debug
+# → android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+Awtomatiko ring bina-build ng GitHub Actions (`mobile-apk` workflow) ang APK
+tuwing may pagbabago sa `mobile-app/`. Makikita ito sa **Actions → mobile-apk → Artifacts**.
+
+Para sa Play Store, gumawa ng sariling signing key at gamitin ang
+`npm run build:release` (tingnan ang [Android signing guide](https://developer.android.com/studio/publish/app-signing)).
+
 ## ⚙️ Settings (environment variables)
 
 | Variable | Default | Paliwanag |
@@ -95,5 +128,6 @@ mobile-app/
 │   ├── browser.js     # Pag-load ng Puppeteer, shared browser, devices, job limit
 │   ├── actions.js     # Screenshot, PDF, scrape, inspect, automate
 │   └── live.js        # Live screencast + tap/scroll/type
-└── public/            # Ang mobile app (HTML/CSS/JS, PWA manifest, service worker)
+├── public/            # Ang mobile app (HTML/CSS/JS, PWA manifest, service worker)
+└── apk/               # Android app (Capacitor) + PuppeteerMobile.apk
 ```

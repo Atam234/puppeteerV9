@@ -25,16 +25,24 @@
         <img src="/icons/icon.svg" alt="" width="72" height="72" />
         <h1>Puppeteer Mobile</h1>
         <p data-i18n="loginHelp">
-          Ilagay ang access token na makikita sa terminal kung saan mo pinatakbo ang server.
+          Ikonekta sa Puppeteer Mobile server mo.
         </p>
         <form id="login-form">
+          <input
+            id="login-server"
+            type="text"
+            inputmode="url"
+            autocapitalize="off"
+            spellcheck="false"
+            placeholder="http://192.168.1.5:3000"
+            aria-label="Server"
+          />
           <input
             id="login-token"
             type="password"
             autocomplete="current-password"
             data-i18n-ph="tokenPh"
             placeholder="Access token"
-            required
           />
           <button class="btn primary block" type="submit" data-i18n="login">Pumasok</button>
         </form>
@@ -70,7 +78,7 @@
             </button>
             <input
               id="live-url"
-              type="url"
+              type="text"
               inputmode="url"
               autocapitalize="off"
               autocomplete="url"
@@ -120,7 +128,7 @@
           <form class="card form" id="capture-form">
             <label class="field">
               <span>Website URL</span>
-              <input name="url" type="url" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="https://example.com" required />
+              <input name="url" type="text" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="https://example.com" required />
             </label>
             <div class="shot-only">
               <label class="field">
@@ -185,7 +193,7 @@
           <form class="card form" id="extract-form">
             <label class="field">
               <span>Website URL</span>
-              <input name="url" type="url" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="https://example.com" required />
+              <input name="url" type="text" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="https://example.com" required />
             </label>
             <span class="label" data-i18n="whatToGet">Ano ang kukunin?</span>
             <div class="chips" id="extract-presets">
@@ -246,7 +254,7 @@
           <form class="card form" id="inspect-form">
             <label class="field">
               <span>Website URL</span>
-              <input name="url" type="url" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="https://example.com" required />
+              <input name="url" type="text" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="https://example.com" required />
             </label>
             <label class="field">
               <span data-i18n="device">Device</span>

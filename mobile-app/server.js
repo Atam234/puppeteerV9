@@ -66,6 +66,19 @@ app.use(
   }),
 );
 
+// The Android app (APK) serves its UI from its own origin, so allow
+// cross-origin API calls. Auth is a bearer token (no cookies), so this is safe.
+app.use('/api', (req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Max-Age', '600');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  next();
+});
+
 app.get('/api/health', (_req, res) => {
   res.json({ok: true, auth: AUTH_ENABLED});
 });

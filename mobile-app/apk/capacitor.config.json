@@ -1,0 +1,12 @@
+{
+  "appId": "com.puppeteer.mobile",
+  "appName": "Puppeteer Mobile",
+  "webDir": "../public",
+  "server": {
+    "androidScheme": "http",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}
