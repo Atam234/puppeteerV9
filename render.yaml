@@ -5,9 +5,12 @@ services:
     name: puppeteer-mobile
     runtime: docker
     plan: free
-    rootDir: mobile-app
-    dockerfilePath: ./Dockerfile
-    dockerContext: .
+    # Paths are relative to the repository root.
+    dockerfilePath: ./mobile-app/Dockerfile
+    dockerContext: ./mobile-app
+    buildFilter:
+      paths:
+        - mobile-app/**
     healthCheckPath: /api/health
     autoDeploy: true
     envVars:
