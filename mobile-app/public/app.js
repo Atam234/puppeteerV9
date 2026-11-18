@@ -1028,6 +1028,16 @@ function liveConnect(url) {
             h('button', {class: 'btn ghost', onclick: () => shareBlob(blob, name)}, '↗ ' + t('share')))));
         break;
       }
+      case 'pdf': {
+        const blob = b64toBlob(msg.data, 'application/pdf');
+        const name = fileName($('#live-url').value, 'pdf');
+        openSheet('📄 PDF', h('div', {class: 'result'},
+          h('p', {}, `${msg.title || name} · ${(blob.size / 1024).toFixed(0)} KB`),
+          h('div', {class: 'result-actions'},
+            h('button', {class: 'btn primary', onclick: () => downloadBlob(blob, name)}, '⬇ ' + t('download')),
+            h('button', {class: 'btn ghost', onclick: () => shareBlob(blob, name)}, '↗ ' + t('share')))));
+        break;
+      }
       case 'evalResult':
         openSheet('{ } Result', h('pre', {}, JSON.stringify(msg.result, null, 2)));
         break;
@@ -1073,6 +1083,10 @@ $('#live-stop').addEventListener('click', () => ws?.close(1000));
 $('#live-enter').addEventListener('click', () => liveSend({type: 'key', key: 'Enter'}));
 $('#live-tab').addEventListener('click', () => liveSend({type: 'key', key: 'Tab'}));
 $('#live-shot').addEventListener('click', () => liveSend({type: 'screenshot', fullPage: false}));
+$('#live-pdf').addEventListener('click', () => {
+  toast(t('working'));
+  liveSend({type: 'pdf'});
+});
 $('#live-device').addEventListener('change', e => {
   store.set('liveDevice', e.target.value);
   liveSend({type: 'device', device: e.target.value});

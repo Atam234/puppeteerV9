@@ -150,6 +150,15 @@ export function handleLiveConnection(ws) {
         send({type: 'screenshot', data: buf.toString('base64')});
         break;
       }
+      case 'pdf': {
+        // Print the page as the user sees it now (e.g. after they passed a
+        // site's human check by hand). Use screen styles, like a browser.
+        await page.emulateMediaType('screen');
+        const buf = await page.pdf({format: 'A4', printBackground: true, margin: {top: '1cm', bottom: '1cm', left: '1cm', right: '1cm'}});
+        await page.emulateMediaType(null);
+        send({type: 'pdf', data: Buffer.from(buf).toString('base64'), title: await page.title()});
+        break;
+      }
       case 'evaluate': {
         const result = await page.evaluate(`(async () => { ${msg.code} })()`);
         send({type: 'evalResult', result: result === undefined ? null : result});
