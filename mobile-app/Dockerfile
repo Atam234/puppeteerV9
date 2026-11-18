@@ -12,6 +12,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates unzip fonts-liberation fonts-noto-color-emoji \
     && PUPPETEER_SKIP_DOWNLOAD=1 npm ci --omit=dev --no-audit --no-fund \
     && npx puppeteer browsers install chrome --install-deps \
+    && npx puppeteer browsers install chrome-headless-shell \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

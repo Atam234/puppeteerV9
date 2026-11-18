@@ -41,12 +41,42 @@ const WAIT_UNTIL = new Set([
   'networkidle2',
 ]);
 
+/**
+ * Opens a URL robustly. The page counts as opened once its HTML is parsed;
+ * after that we wait for the requested "settled" state only as a best effort.
+ * Many sites (chat apps, live feeds, ads, analytics) never go fully idle, so
+ * insisting on network idle would time out on them.
+ */
+export async function gotoSettled(page, rawUrl, opts = {}) {
+  const url = normalizeUrl(rawUrl);
+  const timeout = Number(opts.timeout || 45_000);
+  const mode = WAIT_UNTIL.has(opts.waitUntil) ? opts.waitUntil : 'networkidle2';
+  const response = await page.goto(url, {waitUntil: 'domcontentloaded', timeout});
+  const settle = Math.min(6_000, timeout);
+  if (mode !== 'domcontentloaded') {
+    await page
+      .waitForFunction(
+        () => {
+          return document.readyState === 'complete';
+        },
+        {timeout: settle},
+      )
+      .catch(() => {});
+  }
+  if (mode.startsWith('networkidle')) {
+    await page
+      .waitForNetworkIdle({
+        idleTime: 500,
+        concurrency: mode === 'networkidle0' ? 0 : 2,
+        timeout: settle,
+      })
+      .catch(() => {});
+  }
+  return response;
+}
+
 async function open(page, opts) {
-  const url = normalizeUrl(opts.url);
-  const waitUntil = WAIT_UNTIL.has(opts.waitUntil)
-    ? opts.waitUntil
-    : 'networkidle2';
-  const response = await page.goto(url, {waitUntil});
+  const response = await gotoSettled(page, opts.url, opts);
   const delay = Math.min(Number(opts.delay || 0), 15_000);
   if (delay > 0) {
     await new Promise(r => {
@@ -295,7 +325,7 @@ export async function automate(opts) {
       try {
         switch (step.action) {
           case 'goto':
-            await page.goto(normalizeUrl(step.value), {waitUntil: 'networkidle2'});
+            await gotoSettled(page, step.value, opts);
             entry.detail = page.url();
             break;
           case 'click':

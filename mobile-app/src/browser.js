@@ -70,7 +70,9 @@ const LOW_MEMORY_ARGS = [
   '--disable-extensions',
   '--disable-background-networking',
   '--disable-component-update',
-  '--disable-features=Translate,OptimizationHints,MediaRouter',
+  // One renderer for all frames instead of one per site: big memory saver.
+  '--disable-site-isolation-trials',
+  '--disable-features=Translate,OptimizationHints,MediaRouter,IsolateOrigins,site-per-process',
   '--js-flags=--max-old-space-size=192',
 ];
 // Close the shared browser after a quiet period to give memory back.
@@ -109,7 +111,9 @@ export async function getBrowser() {
   browserPromise = (async () => {
     const puppeteer = (await loadPuppeteer()).default;
     const browser = await puppeteer.launch({
-      headless: process.env.HEADLESS === 'false' ? false : true,
+      // chrome-headless-shell uses noticeably less memory than full Chrome.
+      headless:
+        process.env.HEADLESS === 'false' ? false : LOW_MEMORY ? 'shell' : true,
       executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
       args: [
         '--no-sandbox',

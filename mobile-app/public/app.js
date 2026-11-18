@@ -163,7 +163,7 @@ function applyI18n(root = document) {
 /* Theme + settings                                                    */
 /* ------------------------------------------------------------------ */
 const settings = Object.assign(
-  {theme: 'auto', timeout: 30, waitUntil: 'networkidle2'},
+  {theme: 'auto', timeout: 60, waitUntil: 'networkidle2'},
   store.get('settings', {}),
 );
 function applyTheme() {

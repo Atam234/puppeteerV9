@@ -198,6 +198,17 @@ server.listen(PORT, HOST, async () => {
     console.log('\n  Tip: set APP_TOKEN=yourSecret to keep the same token between restarts.');
   }
   console.log('');
+
+  // Optional self-test on boot, e.g. STARTUP_CHECK_URL=https://chatgpt.com
+  if (process.env.STARTUP_CHECK_URL) {
+    const started = Date.now();
+    try {
+      const {buffer} = await screenshot({url: process.env.STARTUP_CHECK_URL, device: 'desktop', timeout: 60_000});
+      console.log(`  Startup check OK: ${buffer.length} bytes in ${Date.now() - started} ms`);
+    } catch (err) {
+      console.log(`  Startup check FAILED after ${Date.now() - started} ms: ${err.message}`);
+    }
+  }
 });
 
 for (const sig of ['SIGINT', 'SIGTERM']) {
