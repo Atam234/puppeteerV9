@@ -203,8 +203,8 @@ server.listen(PORT, HOST, async () => {
   if (process.env.STARTUP_CHECK_URL) {
     const started = Date.now();
     try {
-      const {buffer} = await screenshot({url: process.env.STARTUP_CHECK_URL, device: 'desktop', timeout: 60_000});
-      console.log(`  Startup check OK: ${buffer.length} bytes in ${Date.now() - started} ms`);
+      const r = await scrape({url: process.env.STARTUP_CHECK_URL, preset: 'headings', device: 'desktop', timeout: 60_000});
+      console.log(`  Startup check OK in ${Date.now() - started} ms: title="${r.title}" headings=${JSON.stringify(r.items.slice(0, 5).map(i => i.text))}`);
     } catch (err) {
       console.log(`  Startup check FAILED after ${Date.now() - started} ms: ${err.message}`);
     }
